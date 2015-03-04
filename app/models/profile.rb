@@ -7,50 +7,26 @@ class Profile < ActiveRecord::Base
   end
 
   def self.create_from_username(username)
-
-  end
-
-  def username
-    @content["login"]
-  end
-
-  def avatar_url
-    @content["avatar_url"]
-  end
-
-  def location
-    @content["location"]
-  end
-
-  def company_name
-    @content["company"]
-  end
-
-  def number_of_followers
-    @content["followers"]
-  end
-
-  def number_following
-    @content["following"]
+    response = HTTParty.get(
+        "https://api.github.com/users/#{username}",
+        :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
+                     "User-Agent" => "anyone"
+                    }
+    )
+    if response["login"]
+      Profile.create(body: response)
+    else
+      return nil
+    end
   end
 
   private
     def parse
       number_following = body["following"]
-      #...
+      number_of_followers = body["followers"]
+      company_name = body["company_name"]
+      location = body["location"]
+      username = body["login"]
+      avatar_url = body["avatar_url"]
     end
-
-    def cache
-      if Profile.where(username: @username).blank?
-        @content = HTTParty.get(
-            "https://api.github.com/users/#{username}",
-            :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
-                         "User-Agent" => "anyone"
-                        }
-        )
-      else
-        @content = Profile.find_by(username: @username).body
-      end
-    end
-
 end
