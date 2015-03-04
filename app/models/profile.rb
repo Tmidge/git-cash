@@ -1,12 +1,13 @@
-class Profile
+class Profile < ActiveRecord::Base
+  validates :username, presence: true, uniqueness: true
+  before_create :parse
 
   def initialize(username)
-    @content = HTTParty.get(
-        "https://api.github.com/users/#{username}",
-        :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
-                     "User-Agent" => "anyone"
-                    }
-    )
+    @username = username
+  end
+
+  def self.create_from_username(username)
+
   end
 
   def username
@@ -32,5 +33,24 @@ class Profile
   def number_following
     @content["following"]
   end
+
+  private
+    def parse
+      number_following = body["following"]
+      #...
+    end
+
+    def cache
+      if Profile.where(username: @username).blank?
+        @content = HTTParty.get(
+            "https://api.github.com/users/#{username}",
+            :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
+                         "User-Agent" => "anyone"
+                        }
+        )
+      else
+        @content = Profile.find_by(username: @username).body
+      end
+    end
 
 end
