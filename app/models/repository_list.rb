@@ -8,7 +8,6 @@ class RepositoryList
                      "User-Agent" => "anyone"
                     }
     )
-    @repositories = results.map {|r| Repository.new(r)}
+    @repositories = results.map {|r| Repository.find_or_create_from_name(r)}
   end
-
 end

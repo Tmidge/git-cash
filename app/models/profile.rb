@@ -1,32 +1,24 @@
 class Profile < ActiveRecord::Base
   validates :username, presence: true, uniqueness: true
-  before_create :parse
 
-  def initialize(username)
-    @username = username
+  def self.create_or_update_username(username, profile)
+      response =  HTTParty.get(
+          "https://api.github.com/users/#{username}",
+          :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
+                       "User-Agent" => "anyone"
+          })
+      if response["login"]
+        profile = Profile.create(
+        body: response,
+        number_following: response["following"],
+        number_of_followers: response["followers"],
+        company_name: response["company"],
+        location: response["location"],
+        avatar_url: response["avatar_url"],
+        username: response["login"],
+        )
+      end
+      profile
   end
 
-  def self.create_from_username(username)
-    response = HTTParty.get(
-        "https://api.github.com/users/#{username}",
-        :headers => {"Authorization" => "token #{ENV['GITHUB_TOKEN']}",
-                     "User-Agent" => "anyone"
-                    }
-    )
-    if response["login"]
-      Profile.create(body: response)
-    else
-      return nil
-    end
-  end
-
-  private
-    def parse
-      number_following = body["following"]
-      number_of_followers = body["followers"]
-      company_name = body["company_name"]
-      location = body["location"]
-      username = body["login"]
-      avatar_url = body["avatar_url"]
-    end
 end
